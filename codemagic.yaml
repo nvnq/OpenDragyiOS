@@ -7,27 +7,27 @@ workflows:
       vars:
         PROJECT_DIR: "iOS" 
         XCODE_PROJECT: "iOS.xcodeproj"          
+        XCODE_SCHEME: "DIYDragy - iOS"  # Hardcoded exact name with spaces intact
       xcode: latest
     scripts:
+      - name: Recreate and Share Xcode Schemes
+        script: |
+          cd "$PROJECT_DIR"
+          
+          # Force the scheme files to be generated globally so the build system can read them
+          gem install xcodeproj
+          ruby -e "require 'xcodeproj'; proj = Xcodeproj::Project.open('$XCODE_PROJECT'); proj.recreate_user_schemes; proj.save"
+
       - name: Build Swift App
         script: |
           cd "$PROJECT_DIR"
           
-          # Dynamically find the first valid scheme in the project
-          echo "Finding project schemes..."
-          XCODE_SCHEME=$(xcodebuild -list -project "$XCODE_PROJECT" | awk '/Schemes:/{flag=1;next}/^$/{flag=0}flag' | xargs | awk '{print $1}')
+          echo "Building with scheme: $XCODE_SCHEME"
           
-          if [ -z "$XCODE_SCHEME" ]; then
-            echo "Error: No Xcode scheme found!"
-            exit 1
-          fi
-          
-          echo "Found scheme: $XCODE_SCHEME"
-          
-          # Clean any old build artifacts
+          # Clean old artifacts
           xcodebuild clean -project "$XCODE_PROJECT" -scheme "$XCODE_SCHEME"
           
-          # Build the binaries without requiring developer signing keys
+          # Compile the application (wrapped in quotes to handle spaces)
           xcodebuild build-for-testing \
             -project "$XCODE_PROJECT" \
             -scheme "$XCODE_SCHEME" \
@@ -40,10 +40,10 @@ workflows:
           cd "$PROJECT_DIR"
           mkdir -p Payload
           
-          # Copy the compiled .app file
+          # Copy the built app binary
           cp -r ~/Library/Developer/Xcode/DerivedData/*/Build/Products/Debug-iphoneos/*.app Payload/ 2>/dev/null || cp -r build/Build/Products/Debug-iphoneos/*.app Payload/
           
-          # Zip it up into an installer format
+          # Package into the final zip format
           zip -r ../OpenDragy.ipa Payload
           rm -rf Payload
     artifacts:
