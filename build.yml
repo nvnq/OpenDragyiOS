@@ -1,0 +1,40 @@
+name: Build Unsigned iOS IPA
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch: # Allows you to manually click a button to run the build
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Build and Package Unsigned IPA
+      run: |
+        cd iOS
+        
+        # 1. Clean the project
+        xcodebuild clean -project iOS.xcodeproj -scheme "DIYDragy - iOS"
+        
+        # 2. Build the app binary for testing (bypasses official Apple signing codes)
+        xcodebuild build-for-testing \
+          -project iOS.xcodeproj \
+          -scheme "DIYDragy - iOS" \
+          -destination "generic/platform=iOS" \
+          CODE_SIGNING_ALLOWED=NO \
+          COMPILER_INDEX_STORE_ENABLE=NO
+          
+        # 3. Zip the compiled output into standard .ipa payload structure
+        mkdir -p Payload
+        cp -r ~/Library/Developer/Xcode/DerivedData/*/Build/Products/Debug-iphoneos/*.app Payload/ 2>/dev/null || cp -r build/Build/Products/Debug-iphoneos/*.app Payload/
+        zip -r ../DIYDragy.ipa Payload
+        
+    - name: Upload Finished Installer File
+      uses: actions/upload-artifact@v4
+      with:
+        name: DIYDragy-App
+        path: DIYDragy.ipa
