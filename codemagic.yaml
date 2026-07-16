@@ -5,22 +5,37 @@ workflows:
     instance_type: mac_mini_m1
     environment:
       vars:
-        XCODE_PROJECT: "iOS.xcodeproj" # Change this to match your file name
-        XCODE_SCHEME: "iOS"            # Change this to match your scheme name
+        PROJECT_DIR: "iOS" 
+        XCODE_PROJECT: "iOS.xcodeproj" 
+        XCODE_SCHEME: "iOS"            
       xcode: latest
     scripts:
       - name: Build Swift App
         script: |
+          # Navigate into the iOS folder where the project lives
+          cd "$PROJECT_DIR"
+          
+          # Clean any old build artifacts first
+          xcodebuild clean -project "$XCODE_PROJECT" -scheme "$XCODE_SCHEME"
+          
+          # Build the binaries without requiring Apple developer signing keys
           xcodebuild build-for-testing \
             -project "$XCODE_PROJECT" \
             -scheme "$XCODE_SCHEME" \
             -destination "generic/platform=iOS" \
-            CODE_SIGNING_ALLOWED=NO
+            CODE_SIGNING_ALLOWED=NO \
+            COMPILER_INDEX_STORE_ENABLE=NO
+            
       - name: Packaging as Unsigned IPA
         script: |
+          cd "$PROJECT_DIR"
           mkdir -p Payload
-          cp -r build/Build/Products/Debug-iphoneos/*.app Payload/
-          zip -r YourAppName.ipa Payload
+          
+          # Find the compiled .app file from Xcode's default build directory and copy it
+          cp -r ~/Library/Developer/Xcode/DerivedData/*/Build/Products/Debug-iphoneos/*.app Payload/ 2>/dev/null || cp -r build/Build/Products/Debug-iphoneos/*.app Payload/
+          
+          # Zip it up into an installer format and move it out to the root directory
+          zip -r ../OpenDragy.ipa Payload
           rm -rf Payload
     artifacts:
       - "*.ipa"
