@@ -5,8 +5,8 @@ workflows:
     instance_type: mac_mini_m1
     environment:
       vars:
-        XCODE_PROJECT: "YourAppName.xcodeproj" # Change this to match your file name
-        XCODE_SCHEME: "YourAppName"            # Change this to match your scheme name
+        XCODE_PROJECT: "iOS.xcodeproj" # Change this to match your file name
+        XCODE_SCHEME: "iOS"            # Change this to match your scheme name
       xcode: latest
     scripts:
       - name: Build Swift App
