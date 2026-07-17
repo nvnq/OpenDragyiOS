@@ -1,0 +1,32 @@
+name: Compile Swift to IPA
+on: [push, workflow_dispatch]
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Compile and Package Unsigned IPA
+      run: |
+        cd iOS # Change this to the folder containing your .xcodeproj
+        
+        # Build the binaries bypass code signing limits
+        xcodebuild build-for-testing \
+          -project iOS.xcodeproj \
+          -scheme "DIYDragy - iOS" \
+          -destination "generic/platform=iOS" \
+          CODE_SIGNING_ALLOWED=NO \
+          COMPILER_INDEX_STORE_ENABLE=NO
+          
+        # Structure it into a Payload ZIP
+        mkdir -p Payload
+        cp -r ~/Library/Developer/Xcode/DerivedData/*/Build/Products/Debug-iphoneos/*.app Payload/ 2>/dev/null || cp -r build/Build/Products/Debug-iphoneos/*.app Payload/
+        zip -r ../DIYDragy.ipa Payload
+        
+    - name: Upload IPA Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: Compiled-iOS-App
+        path: DIYDragy.ipa
