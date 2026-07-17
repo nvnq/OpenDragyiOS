@@ -1,4 +1,5 @@
 name: Compile Swift to IPA
+
 on: [push, workflow_dispatch]
 
 jobs:
@@ -8,11 +9,21 @@ jobs:
     - name: Checkout Code
       uses: actions/checkout@v4
 
-    - name: Compile and Package Unsigned IPA
+    - name: Install Dependencies and Compile
       run: |
-        cd iOS # Change this to the folder containing your .xcodeproj
+        cd iOS
         
-        # Build the binaries bypass code signing limits
+        # 1. Resolve Swift Package Manager dependencies if used
+        xcodebuild -resolvePackageDependencies -project iOS.xcodeproj
+        
+        # 2. If using CocoaPods, install pods (uncomment the 2 lines below if a Podfile exists)
+        # pod repo update
+        # pod install
+        
+        # 3. Clean the project
+        xcodebuild clean -project iOS.xcodeproj -scheme "DIYDragy - iOS"
+        
+        # 4. Build the binaries bypassing code signing limits
         xcodebuild build-for-testing \
           -project iOS.xcodeproj \
           -scheme "DIYDragy - iOS" \
@@ -20,7 +31,7 @@ jobs:
           CODE_SIGNING_ALLOWED=NO \
           COMPILER_INDEX_STORE_ENABLE=NO
           
-        # Structure it into a Payload ZIP
+        # 5. Structure into a Payload ZIP
         mkdir -p Payload
         cp -r ~/Library/Developer/Xcode/DerivedData/*/Build/Products/Debug-iphoneos/*.app Payload/ 2>/dev/null || cp -r build/Build/Products/Debug-iphoneos/*.app Payload/
         zip -r ../DIYDragy.ipa Payload
