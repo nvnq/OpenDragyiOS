@@ -9,31 +9,30 @@ jobs:
     - name: Checkout Code
       uses: actions/checkout@v4
 
-    - name: Install Dependencies and Compile
+    - name: Compile Project and Package Unsigned IPA
       run: |
         cd iOS
         
-        # 1. Resolve Swift Package Manager dependencies if used
-        xcodebuild -resolvePackageDependencies -project iOS.xcodeproj
-        
-        # 2. If using CocoaPods, install pods (uncomment the 2 lines below if a Podfile exists)
-        # pod repo update
-        # pod install
-        
-        # 3. Clean the project
+        # 1. Clean the project
         xcodebuild clean -project iOS.xcodeproj -scheme "DIYDragy - iOS"
         
-        # 4. Build the binaries bypassing code signing limits
-        xcodebuild build-for-testing \
+        # 2. Build the main application binary directly while overriding code signing
+        xcodebuild build \
           -project iOS.xcodeproj \
           -scheme "DIYDragy - iOS" \
           -destination "generic/platform=iOS" \
           CODE_SIGNING_ALLOWED=NO \
+          CODE_SIGNING_REQUIRED=NO \
+          CODE_SIGN_IDENTITY="" \
           COMPILER_INDEX_STORE_ENABLE=NO
           
-        # 5. Structure into a Payload ZIP
+        # 3. Create the standard Payload structure required for an .ipa package
         mkdir -p Payload
+        
+        # 4. Copy the freshly compiled app binary into the Payload directory
         cp -r ~/Library/Developer/Xcode/DerivedData/*/Build/Products/Debug-iphoneos/*.app Payload/ 2>/dev/null || cp -r build/Build/Products/Debug-iphoneos/*.app Payload/
+        
+        # 5. Compress the folder into your final installable iOS file
         zip -r ../DIYDragy.ipa Payload
         
     - name: Upload IPA Artifact
