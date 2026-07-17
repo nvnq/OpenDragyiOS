@@ -1,72 +1,51 @@
-name: Compile Swift to IPA 1
+name: Build iOS
 
-on: [push, workflow_dispatch]
+on:
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: macos-latest
+
     steps:
-    - name: Checkout Code
-      uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
-    - name: Resolve Packages and Build Unsigned IPA
-      run: |
-        cd iOS
-        
-        # 1. Create a workspace definition file to force package linking
-        cat <<EOF > contents.xcworkspacedata
-        <?xml version="1.0" encoding="UTF-8"?>
-        <Workspace version = "1.0">
-           <FileRef location = "group:iOS.xcodeproj"></FileRef>
-        </Workspace>
-        EOF
-        
-        mkdir -p iOS.xcodeproj/project.xcworkspace/xcshareddata/swiftpm
-        
-        # 2. Dynamically supply the missing package manifests for SwiftyJSON and Apple Logging
-        cat <<EOF > iOS.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
-        {
-          "pins" : [
-            {
-              "identity" : "swift-log",
-              "kind" : "remoteSourceControl",
-              "location" : "https://github.com/apple/swift-log.git",
-              "state" : {
-                "revision" : "e97a6fcb1ab074ae9ab7f7168d6ffdec6e14d458",
-                "version" : "1.5.4"
-              }
-            },
-            {
-              "identity" : "swiftyjson",
-              "kind" : "remoteSourceControl",
-              "location" : "https://github.com/SwiftyJSON/SwiftyJSON.git",
-              "state" : {
-                "revision" : "b3dcd7db5c5be286595e7a4ad808da2bb425bcbc",
-                "version" : "5.0.2"
-              }
-            }
-          ],
-          "version" : 2
-        }
-        EOF
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode.app
 
-        # 3. Clean and compile the application target natively
-        xcodebuild clean build \
-          -project iOS.xcodeproj \
-          -scheme "DIYDragy - iOS" \
-          -destination "generic/platform=iOS" \
-          CODE_SIGNING_ALLOWED=NO \
-          CODE_SIGNING_REQUIRED=NO \
-          CODE_SIGN_IDENTITY="" \
-          COMPILER_INDEX_STORE_ENABLE=NO
-          
-        # 4. Package up the completed build artifact into an installable .ipa
-        mkdir -p Payload
-        cp -r ~/Library/Developer/Xcode/DerivedData/*/Build/Products/Debug-iphoneos/*.app Payload/ 2>/dev/null || cp -r build/Build/Products/Debug-iphoneos/*.app Payload/
-        zip -r ../DIYDragy.ipa Payload
-        
-    - name: Upload IPA Artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: Compiled-iOS-App
-        path: DIYDragy.ipa
+      - name: Show Xcode version
+        run: xcodebuild -version
+
+      - name: Resolve packages
+        working-directory: iOS
+        run: |
+          xcodebuild \
+            -resolvePackageDependencies \
+            -project iOS.xcodeproj
+
+      - name: Build
+        working-directory: iOS
+        run: |
+          xcodebuild \
+            -scheme "DIYDragy - iOS" \
+            -project iOS.xcodeproj \
+            -configuration Release \
+            -destination "generic/platform=iOS" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY=""
+
+      - name: Package IPA
+        run: |
+          mkdir Payload
+          APP=$(find ~/Library/Developer/Xcode/DerivedData -name "*.app" | head -1)
+          cp -R "$APP" Payload/
+          cd Payload/..
+          zip -r DIYDragy.ipa Payload
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: DIYDragy
+          path: DIYDragy.ipa
