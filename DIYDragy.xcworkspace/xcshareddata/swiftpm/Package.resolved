@@ -1,0 +1,52 @@
+{
+  "object": {
+    "pins": [
+      {
+        "package": "Lilliput",
+        "repositoryURL": "https://github.com/jkolb/Lilliput",
+        "state": {
+          "branch": null,
+          "revision": "227c8015491ac9a870463cff02aba8f7111d601b",
+          "version": "9.2.0"
+        }
+      },
+      {
+        "package": "SQLite.swift",
+        "repositoryURL": "https://github.com/stephencelis/SQLite.swift.git",
+        "state": {
+          "branch": null,
+          "revision": "0a9893ec030501a3956bee572d6b4fdd3ae158a1",
+          "version": "0.12.2"
+        }
+      },
+      {
+        "package": "swift-log",
+        "repositoryURL": "https://github.com/apple/swift-log.git",
+        "state": {
+          "branch": "main",
+          "revision": "bda2661797277399ffa66c29701659c2ba02aba4",
+          "version": null
+        }
+      },
+      {
+        "package": "SwiftSocket",
+        "repositoryURL": "https://github.com/klundberg/SwiftSocket.git",
+        "state": {
+          "branch": "swiftpm-support",
+          "revision": "968c1163983c36bbead64e15b67baa2e57f2a9ab",
+          "version": null
+        }
+      },
+      {
+        "package": "SwiftyJSON",
+        "repositoryURL": "https://github.com/SwiftyJSON/SwiftyJSON.git",
+        "state": {
+          "branch": null,
+          "revision": "2b6054efa051565954e1d2b9da831680026cd768",
+          "version": "5.0.0"
+        }
+      }
+    ]
+  },
+  "version": 1
+}
